@@ -86,3 +86,11 @@ h1 .edition{font-family:inherit;font-weight:500;font-size:10px;letter-spacing:.0
 @media(max-width:767px){body:has(.detail-sheet) .view-controls{visibility:hidden}}
 
 @media(max-height:600px) and (orientation:landscape){body:has(.detail-sheet) .bottom-dock{left:12px;right:324px;width:auto;transform:none;max-width:none;margin:0}}
+
+/* Leave room for the atlas selector above touch camera and search controls. */
+.anatomy-choice [data-slot=select-trigger]{min-height:44px}
+@media(max-width:767px) and (orientation:portrait){
+ .view-controls{top:max(164px,calc(env(safe-area-inset-top) + 146px))}
+ .search-panel{top:max(160px,calc(env(safe-area-inset-top) + 142px))}
+ .anatomy-search-results{max-height:min(360px,calc(100dvh - 260px))!important}
+}

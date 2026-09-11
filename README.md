@@ -1,11 +1,17 @@
 # Human Atlas
 
-An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui. Take the BodyParts3D adult male reference apart into **2,234 individually selectable meshes**, explore **15 anatomical systems**, and search **3,432 named concepts**.
+An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui. Switch between **male and female reference anatomies** in the same application and branch.
 
-**[Explore the live demo](https://human-atlas-seven.vercel.app)**
+| Atlas | Selectable meshes | Named concepts | Coverage |
+|---|---:|---:|---|
+| Male · BodyParts3D 4.0 | 2,234 | 3,432 | Adult male reference, 15 display systems |
+| Female · Human Reference Atlas v1.5 | 888 | 1,073 | Body surface, selected organs and reproductive anatomy; partial skeleton/muscles |
+
+[Upstream live demo](https://human-atlas-seven.vercel.app) — this is the upstream deployment, not a deployment of this fork's changes.
 
 ## Explore
 
+- Choose Male anatomy or Female anatomy using the selector below the title. Switching resets the explorer and cancels the previous model's downloads.
 - Orbit, zoom, and select structures directly on the body.
 - Toggle individual systems or use skeleton and organ presets.
 - Move from assembled anatomy to a spaced inventory of every visible piece.
@@ -37,9 +43,11 @@ Validation covers mesh buffers, names and concept membership, nonoverlapping exp
 
 ## Anatomy data
 
-The current viewer uses **BodyParts3D 4.0**, an adult male reference anatomy, licensed **CC BY 4.0**. It does not represent every human structure or variation. Individual source meshes are distinct from named concepts, which may group multiple meshes. Descriptions distinguish general system context from individual organ explanations.
+The viewer includes **BodyParts3D 4.0** adult male anatomy and **Human Reference Atlas / HuBMAP, 3D Reference Organ Set for Female v1.5**, both attributed under **CC BY 4.0**. These independent collections have different coverage. Individual source meshes are distinct from named concepts, which may group multiple meshes. Descriptions distinguish general system context from individual organ explanations.
 
-Geometry is simplified for browser performance while retaining every source mesh. The packaged model contains 2,288,268 triangles and downloads approximately 33 MB of compressed geometry. Full credits, source links, and adaptation details are in [ATTRIBUTION.md](public/ATTRIBUTION.md).
+Geometry is simplified for browser performance while retaining every source mesh. Male geometry contains 2,288,268 triangles (~33 MB compressed); female geometry contains 1,810,038 triangles (~23.6 MB compressed). Only the selected atlas is loaded. Full credits, source links, and adaptation details are in [ATTRIBUTION.md](public/ATTRIBUTION.md).
+
+The female collection includes 38 reproductive meshes, but only 16 muscular-category pieces (12 eye muscles, bilateral rectus femoris and quadriceps tendons). It is not a comprehensive female muscle atlas. Eight placenta/umbilical pieces are available in the optional Pregnancy reference layer; defaults and the All preset exclude that layer.
 
 This is an educational explorer, not a diagnostic or surgical tool.
 
@@ -52,6 +60,8 @@ The optional WebMCP tools expose anatomy search and inspection in compatible bro
 ## Rebuilding geometry
 
 The repository includes browser-ready geometry. Rebuilding it is optional: obtain the official BodyParts3D OBJ archive and English metadata tables, prepare the joined concepts and display-system mappings, run `scripts/convert-anatomy.py`, then `node scripts/optimize-anatomy.mjs` and `node scripts/compress-models.mjs`. Simplification uses a 0.2% relative error limit per structure.
+
+Female browser-ready assets and `scripts/convert-female.py` were restored from upstream commit `d72b4f6db42e41a8db84b1c19ff6d86ee7b65284`. The converter takes the pinned HRA v1.5 GLB and a separate `SOURCE_PARTS.json` mapping keyed by node index. That source metadata-generation step is not included, so a full upstream female rebuild is not yet reproducible from this repository alone. The packaged assets require no conversion to run.
 
 ## Deploy
 

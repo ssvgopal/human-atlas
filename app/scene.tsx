@@ -74,13 +74,21 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError}:P
    groups.forEach((gs,system)=>{const geometry=mergeGeometries(gs,false);if(!geometry)throw new Error('Could not assemble anatomy geometry.');geometries.push(geometry);const mesh=new T.Mesh(geometry,mats.get(system as never));mesh.frustumCulled=false;scene.add(mesh);});
    lastState=null;loaded++;onProgress(Math.round(loaded/atlas.chunks.length*100));dirty=true;
   };
-  (async()=>{try{let cursor=0;await Promise.all(Array.from({length:3},async()=>{while(cursor<atlas.chunks.length){const i=cursor++;await loadChunk(i);}}));if(!disposed){ready=true;dirty=true;}}catch(e){if(!disposed)onError(e instanceof Error?e.message:'Could not load the anatomy.');}})();
+  (async()=>{try{let cursor=0;await Promise.all(Array.from({length:3},async()=>{while(!disposed&&cursor<atlas.chunks.length){const i=cursor++;await loadChunk(i);}}));if(!disposed){ready=true;dirty=true;}}catch(e){if(!disposed)onError(e instanceof Error?e.message:'Could not load the anatomy.');}})();
   const fit=(view:string,extent=0)=>{
-   const aspect=camera.aspect,mobile=el.clientWidth<768,normalDistance=mobile?Math.max(4.5,1.8*el.clientHeight/Math.max(160,el.clientHeight-350)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)))):4;
-   const reservedHeight=mobile?350:270;const availableAspect=Math.max(.35,(el.clientWidth-(mobile?40:340))/Math.max(160,el.clientHeight-reservedHeight));const atlasDistance=Math.max(packingHeight,packingWidth/availableAspect)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)))*(el.clientHeight/Math.max(160,el.clientHeight-reservedHeight))*1.08;
+   const mobile=el.clientWidth<768,portrait=mobile&&el.clientHeight>=el.clientWidth,landscape=el.clientWidth>el.clientHeight&&el.clientHeight<=600,compact=mobile||landscape;
+   const top=portrait?(document.querySelector('.view-controls')?.getBoundingClientRect().bottom??218)+12:16;
+   const bottom=compact?(document.querySelector('.bottom-dock')?.getBoundingClientRect().top??el.clientHeight-140)-24:el.clientHeight;
+   const availableHeight=compact?Math.max(80,bottom-top):Math.max(160,el.clientHeight-270);
+   // Fit the atlas into the space between the mobile controls and bottom dock.
+   // The model selector adds header height; a fixed full-screen centre clips heads.
+   if(compact)camera.setViewOffset(el.clientWidth,el.clientHeight,0,el.clientHeight/2-(top+bottom)/2,el.clientWidth,el.clientHeight);
+   else camera.clearViewOffset();
+   const normalDistance=compact?Math.max(4.5,(landscape?2.1:1.8)*el.clientHeight/availableHeight/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)))):4;
+   const availableAspect=Math.max(.35,(el.clientWidth-(compact?40:340))/availableHeight);const atlasDistance=Math.max(packingHeight,packingWidth/availableAspect)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)))*(el.clientHeight/availableHeight)*1.08;
    const distance=T.MathUtils.lerp(normalDistance,Math.max(.2,atlasDistance),extent);if(extent>.8)view='front';
    const direction=view==='front'?new T.Vector3(0,.02,1):view==='back'?new T.Vector3(0,.02,-1):view==='side'?new T.Vector3(1,.02,0):new T.Vector3(.35,.06,1).normalize();
-   controls.target.set(extent>.1&&el.clientWidth>767?-packingWidth*.12:0,extent>.1||mobile?.85:.68,0);camera.position.copy(controls.target).addScaledVector(direction,distance);controls.update();dirty=true;
+   controls.target.set(extent>.1&&el.clientWidth>767?-packingWidth*.12:0,extent>.1||compact?.85:.68,0);camera.position.copy(controls.target).addScaledVector(direction,distance);controls.update();dirty=true;
   };
   const resize=()=>{layoutKey='';lastState=null;renderer.setPixelRatio(Math.min(devicePixelRatio,el.clientWidth<768||el.clientHeight<600?1.5:2));camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,el.clientHeight);fit(latest.current.view,amount);};const observer=new ResizeObserver(resize);observer.observe(el);
   const raycaster=new T.Raycaster(),pointer=new T.Vector2(),tap=new PointerTap(),worldBox=new T.Box3(),hitPoint=new T.Vector3();

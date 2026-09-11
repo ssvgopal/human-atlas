@@ -3,9 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createExplosionLayout} from '../app/explosion-layout.ts';
 import {PointerTap} from '../app/pointer-tap.ts';
 import {atlasTools} from '../app/agent-tools.ts';
+import {ANATOMIES,explanation,SYSTEMS} from '../app/anatomy.ts';
 
-for (const file of ['atlas.json']) {
+for (const sex of ['male','female']) {
+  const model=ANATOMIES[sex],file=model.manifest.split('/').pop();
   const atlas=JSON.parse(await readFile(new URL(`../public/models/${file}`,import.meta.url)));
+  assert.equal(atlas.parts.length,model.pieces);
+  assert.ok(!model.defaultVisible.includes('pregnancy'));
+  assert.ok(atlas.parts.every(p=>SYSTEMS.some(s=>s.id===p.system)),`${file}: unknown system`);
   const groups=[atlas.parts,...[...new Set(atlas.parts.map(p=>p.system))].map(system=>atlas.parts.filter(p=>p.system===system))];
   for(const group of groups) for(const aspect of [.46,1,1.7]) {
     const layout=createExplosionLayout(group,aspect),cells=[...layout.cells.values()];
@@ -22,7 +27,7 @@ for (const file of ['atlas.json']) {
   }
   let selected=null;
   const [find,inspect]=atlasTools(atlas,c=>{selected=c;});
-  const results=find.execute({query:'femur'});
+  const results=find.execute({query:sex==='female'?'uterus':'femur'});
   assert.ok(results.length>0);
   inspect.execute({id:results[0].id});
   const previous=selected;
@@ -31,6 +36,10 @@ for (const file of ['atlas.json']) {
   assert.throws(()=>find.execute({query:' '}));
   console.log(`${file}: packing at desktop/mobile aspect ratios and search/inspection contracts passed.`);
 }
+assert.ok(ANATOMIES.female.defaultVisible.includes('integumentary'));
+assert.match(explanation('uterine wall','reproductive','female'),/ovaries/);
+assert.doesNotMatch(explanation('uterine wall','reproductive','female'),/sperm/);
+assert.match(explanation('prostate','reproductive','male'),/sperm/);
 const tap=new PointerTap();
 tap.down(1,10,10,5);assert.equal(tap.up(1,12,11),true);
 tap.down(1,10,10,5);tap.move(1,40,10);assert.equal(tap.up(1,10,10),false);
